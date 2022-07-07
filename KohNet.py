@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pandas as pd
 import Dataset as Dt
@@ -5,26 +7,25 @@ import matplotlib.pyplot as plt
 
 
 class KohonenNetwork():
-    def __init__(self, classNum):
+    def __init__(self, classNum, learningRate):
         self.K = classNum
         self.X = Dt.NHL  # Массив исходных данных
         self.M = len(self.X)  # Количество исходных данных
         self.N = len(self.X[0]) - 2  # Размерность векторов
-        self.W = np.random.rand(self.K, self.N)  # Инциализация массива весов случайными значениями в диапазоне [0, 1)
         self.As, self.Bs, self.X = KohonenNetwork.__normalization__(self.X)  # Нормировка исходных данных
-        self.la = 0.3  # Коэффициент обучения
-        self.dla = 0.05  # Уменьшение коэффициента обучения
-
-        self.learning()
+        self.Lr = learningRate  # Коэффициент обучения
+        self.dLr = 0.05  # Уменьшение коэффициента обучения
 
     def learning(self):
-        while self.la >= 0:
+        self.W = np.random.rand(self.K, self.N)  # Инциализация массива весов случайными значениями в диапазоне [0, 1)
+        start = time.perf_counter()
+        while self.Lr >= 0:
             for k in range(10):  # Повторение процесса обучения 10 раз
                 for x in self.X:
                     wm = KohonenNetwork.findNear(self.W, x[2:])[0]
                     for i in range(len(wm)):
-                        wm[i] = wm[i] + self.la * (x[i + 2] - wm[i])  # Корректировка весов
-            self.la = self.la - self.dla  # Уменьшение коэффициента обучения
+                        wm[i] = wm[i] + self.Lr * (x[i + 2] - wm[i])  # Корректировка весов
+            self.Lr = self.Lr - self.dLr  # Уменьшение коэффициента обучения
         # Массив денормированных весов
         self.WX = list()
         # Денормировка весов
@@ -33,6 +34,9 @@ class KohonenNetwork():
             for j in range(self.N):
                 self.WX[i].append((self.W[i][j] - self.Bs[j]) / self.As[j])
         self.Data, self.DS = KohonenNetwork.__clusterization__(self.W, self.X)
+        finish = time.perf_counter()
+        self.time = finish - start
+        self.printClasses()
 
     # Расстояние между векторами
     @staticmethod
@@ -142,7 +146,7 @@ class KohonenNetwork():
         fig = plt.figure()
         for i in range(self.K):
             stats = self.WX[i]
-            # Настрока графика
+            # Настройка графика
             stats = np.concatenate((stats, [stats[0]]))
             ax = plt.subplot(100 * (self.K // 2) + 30 + (i + 1), projection='polar')
             ax.plot(angles, stats, 'o-', linewidth=2)
@@ -158,8 +162,9 @@ class KohonenNetwork():
 if __name__ == '__main__':
     print("Пожалуйста, введите количество классов: ", end=' ')
     K = int(input())  # Количество классов
-    cl = KohonenNetwork(K)
-    cl.printClasses()
-    cl.writeToExcel()
-    cl.writeToFile()
-    cl.plot()
+    KN = KohonenNetwork(K)
+    KN.learning()
+    KN.printClasses()
+    KN.writeToExcel()
+    KN.writeToFile()
+    KN.plot()
