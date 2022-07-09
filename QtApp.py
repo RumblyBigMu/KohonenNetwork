@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Kohonen Network")
-        self.setMinimumSize(200, 200)
+        self.setMinimumSize(300, 200)
         self.resize(400, 350)
         self.setMaximumSize(650, 650)
         # Генерация меню
@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
         # Меню "About"
         menu_about = self.menuBar.addMenu("About")
         menu_about.addAction("About", self.about, shortcut='F3')
-        ### Информация о программе
+        # Массив кнопок меню
         self.menu_buttons = (plot_action, write_action)
 
     def about(self):
@@ -68,6 +68,28 @@ class MainWindow(QMainWindow):
     def plotGraphs(self):
         self.form = PlotWindow(self.central.Network.KN)
         self.form.show()
+
+
+class PlotWindow(QMainWindow):
+    def __init__(self, KN=None):
+        super().__init__()
+        self.setWindowIcon(QtGui.QIcon('NN.jpeg'))
+        self.title = "Polar charts"
+        self.width = 800
+        self.height = 600
+        self.KN = KN
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setMinimumSize(self.width, self.height)
+        self.plot = PlotCanvas(self, self.KN)
+        self.show()
+
+    def resizeEvent(self, event):
+        QMainWindow.resizeEvent(self, event)
+        self.plot_size = self.size()
+        self.plot.resize(self.plot_size)
 
 
 class CentralWidget(QWidget):
@@ -169,11 +191,10 @@ class NetworkWidget(QWidget):
 
 
 class PlotCanvas(FigureCanvas):
-
     def __init__(self, parent=None, KN=None):
         # Настройки фигуры
         fig = Figure()
-        FigureCanvas.__init__(self, fig)
+        FigureCanvas.__init__(self)
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self,
                                    QSizePolicy.Expanding,
@@ -183,7 +204,7 @@ class PlotCanvas(FigureCanvas):
         self.plot()
 
     def plot(self):
-        self.figure.clear()
+        # Массив подписей осей диаграмм
         labels = np.array(
             ["GP", "G", "A", "PTS", "+/-", "PIM", "Shots", "Shots,%", "ATOI", "BLK", "HIT", "FOW",
              "FOL", "FO,%"])
@@ -198,28 +219,11 @@ class PlotCanvas(FigureCanvas):
             ax.plot(angles, stats, 'o-', linewidth=2)
             ax.fill(angles, stats, alpha=0.25)
             ax.set_thetagrids(angles * 180 / np.pi, labels)
-            ax.set_title("Класс " + str(i + 1))
+            ax.set_title("Class " + str(i + 1))
             ax.grid(True)
-        self.figure.suptitle("Лепестковые диаграммы характеристик классов")
+        self.figure.suptitle("Polar charts of class characteristics")
         self.figure.tight_layout()
         self.draw()
-
-
-class PlotWindow(QMainWindow):
-    def __init__(self, KN=None):
-        super().__init__()
-        self.setWindowIcon(QtGui.QIcon('NN.jpg'))
-        self.title = "Polar charts"
-        self.width = 800
-        self.height = 600
-        self.KN = KN
-        self.initUI()
-
-    def initUI(self):
-        self.setWindowTitle(self.title)
-        self.setMinimumSize(self.width, self.height)
-        plot = PlotCanvas(self, self.KN)
-        self.show()
 
 
 if __name__ == '__main__':
